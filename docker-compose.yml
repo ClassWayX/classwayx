@@ -1,0 +1,10 @@
+services:
+  app:
+    build:
+      context: ./app
+      target: runner
+    image: classwayx-app-prod
+    container_name: classwayx-app-prod-container
+    ports:
+      - "3000:3000"
+    restart: always

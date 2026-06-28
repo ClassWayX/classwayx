@@ -1,0 +1,36 @@
+# 注意：
+# 此文件不需要进行版本管理
+
+services:
+  app:
+    build:
+      context: ./app
+      target: dev
+
+    # ====================
+    # 镜像和容器名称
+    # 
+    # 如果这里的镜像和容器名称和你本地有冲突，
+    # 可以自行修改为其他名称。
+
+    image: classwayx-app-dev
+    container_name: classwayx-app-dev-container
+    # ====================
+
+    # ====================
+    # 端口映射
+    #
+    # 如果你本地的 3000 端口被占用，
+    # 可以自行修改为其他端口。
+    # 例如：
+    # ports:
+    #   - "5000:3000"
+
+    ports:
+      - "3000:3000"
+    # ====================
+
+    restart: no
+    volumes:
+      - ./app:/app
+      - /app/node_modules
