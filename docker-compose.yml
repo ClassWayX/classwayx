@@ -39,6 +39,23 @@ services:
       -d $$POSTGRES_DB
       -f /app/db_init.sql"
 
+  lark-bot-db-migration:
+    build:
+      context: ./lark-bot
+      target: dependencies
+    image: lark-bot-db-migration
+    container_name: lark-bot-db-migration-container
+    env_file:
+      - ./lark-bot/.env
+    command: npx prisma migrate deploy
+    restart: no
+    volumes:
+      - ./lark-bot:/app
+      - /app/node_modules
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
   postgres:
     image: postgres:17.10-alpine3.24
     container_name: classwayx-postgres-container
