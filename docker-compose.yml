@@ -9,8 +9,35 @@ services:
       - "3000:3000"
     restart: always
     depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  db-init:
+    image: postgres:17.10-alpine3.24
+    container_name: classwayx-db-init
+    environment:
+      LARK_BOT_USER: ${LARK_BOT_USER}
+      LARK_BOT_USER_PASSWORD: ${LARK_BOT_USER_PASSWORD}
+      LARK_BOT_DB_NAME: ${LARK_BOT_DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+      PGPASSWORD: ${DB_PASSWORD}
+    depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./db_init.sql:/app/db_init.sql
+    command: >
+      sh -c "
+      psql
+      --set ON_ERROR_STOP=1
+      --set lark_bot_db=$$LARK_BOT_DB_NAME
+      --set lark_bot_user=$$LARK_BOT_USER
+      --set lark_bot_user_password=$$LARK_BOT_USER_PASSWORD
+      -h postgres
+      -U $$POSTGRES_USER
+      -d $$POSTGRES_DB
+      -f /app/db_init.sql"
 
   postgres:
     image: postgres:17.10-alpine3.24
