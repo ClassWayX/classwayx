@@ -14,8 +14,11 @@ datasource db {
 }
 
 model Class {
-  class_id            Int            @id
+  class_id            Int            @id @default(autoincrement())
+  class_soft_id       Int?           @unique
+  class_name          String
   push_urls           String[]
+  deleted_at          DateTime?
 
   @@schema("app")
 }
