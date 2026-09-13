@@ -10,9 +10,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["app"]
 }
 
 model Class {
   class_id            Int            @id
   push_urls           String[]
+
+  @@schema("app")
 }

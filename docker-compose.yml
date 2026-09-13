@@ -1,16 +1,16 @@
 services:
-  app:
-    build:
-      context: ./app
-      target: runner
-    image: classwayx-app-prod
-    container_name: classwayx-app-prod-container
-    ports:
-      - "3000:3000"
-    restart: always
-    depends_on:
-      db-init:
-        condition: service_completed_successfully
+#  app:
+#    build:
+#      context: ./app
+#      target: runner
+#    image: classwayx-app-prod
+#    container_name: classwayx-app-prod-container
+#    ports:
+#      - "3000:3000"
+#    restart: always
+#    depends_on:
+#      db-init:
+#        condition: service_completed_successfully
 
   db-init:
     image: postgres:17.10-alpine3.24
@@ -54,6 +54,19 @@ services:
       - /app/node_modules
     depends_on:
       db-init:
+        condition: service_completed_successfully
+
+  lark-bot:
+    build:
+      context: ./lark-bot
+      target: runner
+    image: classwayx-lark-bot-prod
+    container_name: classwayx-lark-bot-prod-container
+    ports:
+      - "3001:3000"
+    restart: always
+    depends_on:
+      lark-bot-db-migration:
         condition: service_completed_successfully
 
   postgres:
