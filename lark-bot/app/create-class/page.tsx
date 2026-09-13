@@ -42,7 +42,7 @@ export default function CreateClass() {
 
   return <div className={"w-full flex flex-col items-center justify-center p-8 gap-6"}>
     <h1 className={"text-2xl font-bold"}>创建班级</h1>
-    <Card className={"w-200 rounded-lg"}>
+    <Card className={"w-200"}>
       <CardHeader>
         <CardTitle>填写班级信息</CardTitle>
         <CardDescription>创建班级后，即可通过飞书接收修为变化提醒。</CardDescription>
