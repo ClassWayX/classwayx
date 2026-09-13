@@ -17,9 +17,9 @@ export default function CreateClass() {
   const form = useForm<formSchema>({
     resolver: zodResolver(createClassFormSchema) as unknown as Resolver<formSchema>,
     defaultValues: {
-      className: "班级",
-      pushUrls: [{url: 'https://example.com'}],
-      classSoftId: 0,
+      className: "",
+      pushUrls: [{url: ''}],
+      classSoftId: NaN,
     }
   });
 
