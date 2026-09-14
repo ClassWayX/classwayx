@@ -9,6 +9,22 @@ export default async function Dashboard() {
   const res = await fetchClasses();
 
   if (res.ok) {
+    if (res.value.length == 0) {
+      return <>
+        <DashboardHeader />
+        <Card className={"w-200"}>
+          <CardHeader>
+            <CardTitle>班级列表空空如也</CardTitle>
+            <CardDescription>点击按钮去添加班级</CardDescription>
+            <CardAction>
+              <RedirectButton url={"/create-class"}>
+                添加班级
+              </RedirectButton>
+            </CardAction>
+          </CardHeader>
+        </Card>
+      </>
+    }
     return <>
       <DashboardHeader />
       <Table className={"w-full flex flex-col items-center"}>

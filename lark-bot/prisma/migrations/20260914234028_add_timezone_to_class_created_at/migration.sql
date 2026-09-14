@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Class" ALTER COLUMN "created_at" SET DATA TYPE TIMESTAMPTZ(3);
