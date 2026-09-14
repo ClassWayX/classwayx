@@ -40,7 +40,7 @@ export default function CreateClass() {
     }
   }
 
-  return <div className={"w-full flex flex-col items-center justify-center p-8 gap-6"}>
+  return <>
     <h1 className={"text-2xl font-bold"}>创建班级</h1>
     <Card className={"w-200"}>
       <CardHeader>
@@ -158,6 +158,6 @@ export default function CreateClass() {
         </Field>
       </CardFooter>
     </Card>
-  </div>
+  </>
   ;
 }
