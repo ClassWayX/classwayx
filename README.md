@@ -71,7 +71,7 @@ docker compose restart
 ### 3. 运行数据库迁移
 
 确保数据库已启动（`docker compose up`）。
-在终端进入对应微服务的文件夹，运行 `npx prisma migrate dev`。
+在终端进入对应微服务的文件夹，运行 `npx prisma migrate dev` 和 `npx prisma generate`。
 
 # 仓库组织架构
 
