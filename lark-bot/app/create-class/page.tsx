@@ -10,10 +10,12 @@ import {onSubmit} from "@/app/create-class/_utils/onSubmit";
 import {Input} from "@/components/ui/input";
 import {Button} from "@/components/ui/button";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
+import {useRouter} from "next/navigation";
 
 type formSchema = z.infer<typeof createClassFormSchema>
 
 export default function CreateClass() {
+  const router = useRouter();
   const form = useForm<formSchema>({
     resolver: zodResolver(createClassFormSchema) as unknown as Resolver<formSchema>,
     defaultValues: {
@@ -31,7 +33,7 @@ export default function CreateClass() {
   const clientOnSubmit = async (data: formSchema) => {
     const res = await onSubmit(data);
     if (res.ok) {
-      // todo
+      router.push("/dashboard");
     } else {
       form.setError(res.error.constraint, {
         type: "server",
