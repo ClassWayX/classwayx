@@ -64,6 +64,8 @@ services:
     container_name: classwayx-lark-bot-prod-container
     ports:
       - "6701:3000"
+    env_file:
+      - ./lark-bot/.env
     restart: always
     depends_on:
       lark-bot-db-migration:
