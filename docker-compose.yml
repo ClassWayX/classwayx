@@ -50,7 +50,8 @@ services:
     command: npx prisma migrate deploy
     restart: no
     volumes:
-      - ./lark-bot:/app
+      - ./lark-bot/prisma:/app/prisma
+      - ./lark-bot/prisma7.config.ts:/app/prisma7.config.ts
       - /app/node_modules
     depends_on:
       db-init:
