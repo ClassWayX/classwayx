@@ -4,6 +4,7 @@ import {Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Table
 import RedirectButton from "@/components/RedirectButton";
 import RefreshButton from "@/components/RefreshButton";
 import {convertDateToChinese} from "@/utils/convertDateToChinese";
+import ClassActions from "@/app/dashboard/_components/ClassActions";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function Dashboard() {
             <TableHead className={"w-60"}>班级名称</TableHead>
             <TableHead className={"w-40"}>班级 ID</TableHead>
             <TableHead className={"w-60"}>班级创建时间</TableHead>
+            <TableHead className={"w-20 text-center"}>操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -46,6 +48,9 @@ export default async function Dashboard() {
               <TableCell className={"w-60"}>{item.class_name}</TableCell>
               <TableCell className={"w-40"}>{item.class_soft_id}</TableCell>
               <TableCell className={"w-60"}>{convertDateToChinese(item.created_at)}</TableCell>
+              <TableCell className={"w-20 text-center"}>
+                <ClassActions classSoftId={item.class_soft_id} />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

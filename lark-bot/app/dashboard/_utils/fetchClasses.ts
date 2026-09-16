@@ -10,6 +10,9 @@ export async function fetchClasses(): Promise<Result<FetchSuccess, FetchFailure>
         class_soft_id: true,
         created_at: true,
       },
+      where: {
+        deleted_at: null
+      },
       orderBy: {
         created_at: 'desc',
       },
