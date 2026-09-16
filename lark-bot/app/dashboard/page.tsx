@@ -5,6 +5,8 @@ import RedirectButton from "@/components/RedirectButton";
 import RefreshButton from "@/components/RefreshButton";
 import {convertDateToChinese} from "@/utils/convertDateToChinese";
 
+export const dynamic = "force-dynamic";
+
 export default async function Dashboard() {
   const res = await fetchClasses();
 
