@@ -1,9 +1,8 @@
 import {NextRequest, NextResponse} from "next/server";
-import BotPostBody from "@/types/api/bots/BotPostBody";
-import {ZodError} from "zod";
-import prisma from "@/lib/prisma";
+import {parseBody} from "@/app/api/bots/[softId]/_utils/parseBody";
+import {queryPushUrls} from "@/app/api/bots/[softId]/_utils/queryPushUrls";
+import {sendMessageToPushUrl, SendMessageToPushUrlFailure} from "@/app/api/bots/[softId]/_utils/sendMessageToPushUrl";
 
-// FIXME: 代码质量堪忧
 export async function POST(
   request: NextRequest,
   context: {
@@ -15,83 +14,34 @@ export async function POST(
   const { softId } = await context.params;
   const body = await request.json();
 
-  let parsedBody;
-  try {
-    parsedBody = BotPostBody.parse(body);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return NextResponse.json({
-        code: "BAD_REQUEST_BODY",
-        message: "请求体格式错误。",
-        data: null,
-        details: JSON.parse(error.message)
-      }, {
-        status: 400
-      })
-    } else {
-      throw error;
-    }
-  }
+  const parseBodyResult = parseBody(body);
+  if (!parseBodyResult.ok) return parseBodyResult.error;
 
-  const databaseQueryResult = await prisma.class.findUnique({
-    where: {
-      class_soft_id: Number(softId),
+  const databaseQueryResult = await queryPushUrls(Number(softId));
+  if (!databaseQueryResult.ok) return databaseQueryResult.error;
+
+  const sendMessageResults = await Promise.all(
+    databaseQueryResult.value.push_urls.map(url =>
+      sendMessageToPushUrl(url, parseBodyResult.value.message)
+    )
+  );
+  const { failureCount, failureDetails } = sendMessageResults.reduce(
+    (acc, curr) => {
+      if (!curr.ok) {
+        acc.failureCount += 1;
+        acc.failureDetails.push(curr.error);
+      }
+      return acc;
     },
-    select: {
-      push_urls: true
+    {
+      failureCount: 0,
+      failureDetails: [] as SendMessageToPushUrlFailure[],
     }
-  });
-
-  if (!databaseQueryResult) {
-    return NextResponse.json({
-      code: "CLASS_ID_NOT_FOUND",
-      message: "班级 id 不存在。",
-      data: null,
-    }, {
-      status: 404
-    })
-  }
-
-  let failureCount = 0;
-  const failureDetails: Array<{
-    failedUrl: string,
-    details: object,
-  }> = [];
-
-  for (const url of databaseQueryResult.push_urls) {
-    // FIXME 可以并发
-    const fetchResponse = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({
-        msg_type: "text",
-        content: {
-          text: parsedBody.message,
-        },
-      }),
-    });
-    let responseJson;
-    try {
-      responseJson = await fetchResponse.json();
-    } catch (error) {
-      if (!(error instanceof SyntaxError)) throw error;
-      responseJson = {
-        message: "该响应体不是预期的 json 格式"
-      }
-    }
-    if (fetchResponse.ok) {
-      if (responseJson["code"] !== 0) {
-        failureCount += 1;
-        failureDetails.push(responseJson);
-      }
-    } else {
-      failureCount += 1;
-      failureDetails.push(responseJson);
-    }
-  }
+  );
 
   return NextResponse.json({
     code: "SUCCESS",
-    menubar: `已向 ${databaseQueryResult.push_urls.length} 个 url 推送消息，有 ${failureCount} 个失败。`,
+    message: `已向 ${databaseQueryResult.value.push_urls.length} 个 url 推送消息。`,
     data: {
       failureCount,
       failureDetails,
