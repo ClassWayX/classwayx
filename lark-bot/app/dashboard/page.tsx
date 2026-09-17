@@ -49,7 +49,7 @@ export default async function Dashboard() {
               <TableCell className={"w-40"}>{item.class_soft_id}</TableCell>
               <TableCell className={"w-60"}>{convertDateToChinese(item.created_at)}</TableCell>
               <TableCell className={"w-20 text-center"}>
-                <ClassActions {...item} />
+                <ClassActions classItem={item} />
               </TableCell>
             </TableRow>
           ))}

@@ -19,7 +19,7 @@ import {
 import {ClassItem} from "@/types/dashboard/fetchClassesResult";
 import {useState} from "react";
 
-export default function ClassActions(classItem: ClassItem) {
+export default function ClassActions(props: { classItem: ClassItem }) {
   const [open, setOpen] = useState(false);
 
   return <>
@@ -45,7 +45,7 @@ export default function ClassActions(classItem: ClassItem) {
               <TriangleAlert size={40}  />
             </AlertDialogMedia>
             <AlertDialogTitle>
-              确定要删除 {classItem.class_name} 吗？
+              确定要删除 {props.classItem.class_name} 吗？
             </AlertDialogTitle>
             <AlertDialogDescription>
               此操作不可逆。
@@ -59,8 +59,8 @@ export default function ClassActions(classItem: ClassItem) {
               variant={"destructive"}
               onClick={() => {
                 setOpen(false);
-                if (classItem.class_soft_id == null) return
-                deleteClass(classItem.class_soft_id)
+                if (props.classItem.class_soft_id == null) return
+                deleteClass(props.classItem.class_soft_id)
             }}>
               确定
             </AlertDialogAction>
