@@ -1,25 +1,36 @@
-# ClassWayX 代码仓库
+# ClassWayX
 
 欢迎来到 ClassWayX 代码仓库。
+
+---
+
+ClassWayX 是一个用来管理班级积分的系统，但是目前它的实际功能只有飞书消息推送。
+
+# 核心功能
+
+ - 添加班级，并配置班级 id 和多个飞书 webhook 机器人推送连接
+ - 提供方便的 API，一键方便快捷地向一个班级的所有机器人推送消息
 
 # 在开发模式下运行项目
 
 ## 前置条件 Prerequisites
 
-- **Docker**: `29.x.x` or higher
+- **Docker**: `29.x.x` 或更高
+- **Node.js**: `24.x.x` 或更高
+- **npm**: `11.x.x` 或更高
 
 ## 快速开始
 
 ### 1. 克隆仓库
 
-```
+```bash
 git clone https://github.com/ClassWayX/classwayx.git
 cd classwayx
 ```
 
 ### 2. 复制 Docker Compose Override 文件
 
-```
+```bash
 cp docker-compose.override.yml.example docker-compose.override.yml
 ```
 
@@ -27,7 +38,7 @@ cp docker-compose.override.yml.example docker-compose.override.yml
 
 ### 3. 配置环境变量
 
-```
+```bash
 cp .env.example .env
 
 cd lark-bot
@@ -38,7 +49,7 @@ cp .env.example .env
 
 ### 4. 运行开发环境应用
 
-```
+```bash
 docker compose up
 ```
 
@@ -50,11 +61,14 @@ docker compose up
 # 停止应用
 docker compose stop
 
-# 停止后再次启动
-docker compose start
+# 在后台启动应用
+docker compose up -d
 
-# 重启应用
-docker compose restart
+# 重新构建并启动应用
+docker compose up --buiild
+
+# 销毁运行的容器
+docker compose down
 ```
 
 ## 数据库更改和迁移
@@ -62,7 +76,14 @@ docker compose restart
 ### 1. 配置 DNS
 
 请在本机上将 `postgres` 域名配置解析为 `127.0.0.1`。
-例如，通过修改 `/etc/hosts` 实现。
+例如，通过修改 `/etc/hosts` 实现，否则宿主机无法正常连接数据库。
+
+```bash
+sudo vim /etc/hosts # 在 macOS & Linux 上运行
+
+# 随后写入新的一行：
+# 127.0.0.1 postgres
+```
 
 ### 2. 修改 schema.prisma
 
@@ -70,7 +91,7 @@ docker compose restart
 
 ### 3. 运行数据库迁移
 
-确保数据库已启动（`docker compose up`）。
+确保数据库容器已启动（`docker compose up`）。
 在终端进入对应微服务的文件夹，运行 `npx prisma migrate dev` 和 `npx prisma generate`。
 
 # 仓库组织架构
