@@ -2,32 +2,32 @@ import {fetchClasses} from "@/app/dashboard/_utils/fetchClasses";
 import ClassNotFound from "@/app/dashboard/_components/ClassNotFound";
 import LoadDashboardFailed from "@/app/dashboard/_components/LoadDashboardFailed";
 import ClassTable from "@/app/dashboard/_components/ClassTable";
-import AddClass from "@/app/dashboard/_components/AddClass";
+import AddClassButton from "@/app/dashboard/_components/AddClassButton";
 
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
-  const res = await fetchClasses();
+  const classesResult = await fetchClasses();
 
-  if (res.ok) {
-    if (res.value.length == 0) {
-      return <>
-        <DashboardHeader />
-        <ClassNotFound/>
+  let dashboardBody;
+
+  if (classesResult.ok) {
+    if (classesResult.value.length == 0) {
+      dashboardBody = <ClassNotFound/>
+    } else {
+      dashboardBody = <>
+        <ClassTable classItems={classesResult.value}></ClassTable>
+        <AddClassButton />
       </>
     }
-    return <>
-      <DashboardHeader />
-      <ClassTable classItems={res.value}></ClassTable>
-      <AddClass />
-    </>
-
   } else {
-    return <>
-      <DashboardHeader />
-      <LoadDashboardFailed/>
-    </>
+    dashboardBody = <LoadDashboardFailed/>
   }
+
+  return <>
+    <DashboardHeader />
+    {dashboardBody}
+  </>
 }
 
 function DashboardHeader() { return <h1 className={"text-2xl font-bold"}>管理面板</h1> }

@@ -3,7 +3,7 @@
 import RedirectButton from "@/components/RedirectButton";
 import { motion } from "motion/react";
 
-export default function AddClass() {
+export default function AddClassButton() {
   return <motion.div
     initial={{opacity: 0, translateY: 10}}
     animate={{opacity: 1, translateY: 0}}
