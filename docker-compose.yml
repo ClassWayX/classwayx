@@ -1,9 +1,11 @@
+# 基础文件使用生产配置，本地开发由 docker-compose.override.yml 覆盖。
+# build 用于显式构建生产镜像；接入镜像仓库后使用 pull 和 up --no-build。
 services:
 #  app:
 #    build:
 #      context: ./app
 #      target: runner
-#    image: classwayx-app-prod
+#    image: ${APP_IMAGE:-classwayx-app-prod}
 #    container_name: classwayx-app-prod-container
 #    ports:
 #      - "3000:3000"
@@ -13,7 +15,7 @@ services:
 #        condition: service_completed_successfully
 
   db-init:
-    image: postgres:17.10-alpine3.24
+    image: ${POSTGRES_IMAGE:-postgres:17.10-alpine3.24}
     container_name: classwayx-db-init
     environment:
       LARK_BOT_USER: ${LARK_BOT_USER}
@@ -42,17 +44,13 @@ services:
   lark-bot-db-migration:
     build:
       context: ./lark-bot
-      target: dependencies
-    image: lark-bot-db-migration
+      target: migrator
+    image: ${LARK_BOT_MIGRATION_IMAGE:-lark-bot-db-migration}
     container_name: lark-bot-db-migration-container
     env_file:
       - ./lark-bot/.env
     command: npx prisma migrate deploy
-    restart: no
-    volumes:
-      - ./lark-bot/prisma:/app/prisma
-      - ./lark-bot/prisma7.config.ts:/app/prisma7.config.ts
-      - /app/node_modules
+    restart: "no"
     depends_on:
       db-init:
         condition: service_completed_successfully
@@ -61,7 +59,7 @@ services:
     build:
       context: ./lark-bot
       target: runner
-    image: classwayx-lark-bot-prod
+    image: ${LARK_BOT_IMAGE:-classwayx-lark-bot-prod}
     container_name: classwayx-lark-bot-prod-container
     ports:
       - "6701:3000"
@@ -73,14 +71,13 @@ services:
         condition: service_completed_successfully
 
   postgres:
-    image: postgres:17.10-alpine3.24
+    image: ${POSTGRES_IMAGE:-postgres:17.10-alpine3.24}
     container_name: classwayx-postgres-container
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
     volumes:
       - classwayx-pgdata:/var/lib/postgresql/data
     healthcheck:

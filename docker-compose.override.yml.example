@@ -1,39 +1,26 @@
-# 注意：
-# 此文件不需要进行版本管理
+# 复制为 docker-compose.override.yml 后，本地 docker compose up 会自动加载。
+# 此文件不需要进行版本管理。!override 需要 Docker Compose 2.24.4 或更高版本。
 
 services:
-  app:
-    build:
-      context: ./app
-      target: dev
+  # app 暂未启用；需要时同时取消基础文件和此处的注释。
+#  app:
+#    build:
+#      context: ./app
+#      target: dev
+#    image: classwayx-app-dev
+#    container_name: classwayx-app-dev-container
+#    ports: !override
+#      - "3000:3000"
+#    restart: "no"
+#    volumes:
+#      - ./app:/app
+#      - /app/node_modules
 
-    # ====================
-    # 镜像和容器名称
-    # 
-    # 如果这里的镜像和容器名称和你本地有冲突，
-    # 可以自行修改为其他名称。
-
-    image: classwayx-app-dev
-    container_name: classwayx-app-dev-container
-    # ====================
-
-    # ====================
-    # 端口映射
-    #
-    # 如果你本地的 3000 端口被占用，
-    # 可以自行修改为其他端口。
-    # 例如：
-    # ports:
-    #   - "5000:3000"
-
-    ports:
-      - "3000:3000"
-    # ====================
-
-    restart: no
+  lark-bot-db-migration:
+    image: classwayx-lark-bot-migration-dev
     volumes:
-      - ./app:/app
-      - /app/node_modules
+      - ./lark-bot/prisma:/app/prisma
+      - ./lark-bot/prisma7.config.ts:/app/prisma7.config.ts
 
   lark-bot:
     build:
@@ -41,9 +28,15 @@ services:
       target: dev
     image: classwayx-lark-bot-dev
     container_name: classwayx-lark-bot-dev-container
-    ports:
+    ports: !override
       - "3001:3000"
-    restart: no
+    restart: "no"
     volumes:
       - ./lark-bot:/app
       - /app/node_modules
+      - /app/.next
+      - /app/app/generated/prisma
+
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"

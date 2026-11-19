@@ -5,11 +5,13 @@ WORKDIR /app
 COPY package*.json .
 RUN npm ci
 
-# ===== Run Development =====
-FROM node:24-alpine AS dev
-WORKDIR /app
+# ===== Database Migrations =====
+FROM dependencies AS migrator
+COPY prisma ./prisma
+COPY prisma7.config.ts ./prisma7.config.ts
 
-COPY --from=dependencies /app/node_modules ./node_modules
+# ===== Run Development =====
+FROM dependencies AS dev
 COPY . .
 # Need to mount source code
 
@@ -22,9 +24,7 @@ RUN npx prisma generate
 CMD ["npm", "run", "dev"]
 
 # ===== Build Application =====
-FROM node:24-alpine AS builder
-WORKDIR /app
-COPY --from=dependencies /app/node_modules ./node_modules
+FROM dependencies AS builder
 COPY . .
 
 RUN npx prisma generate
@@ -43,7 +43,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone .
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/app/generated/prisma ./app/generated/prisma
-COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
