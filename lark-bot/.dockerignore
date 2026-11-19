@@ -157,6 +157,7 @@ test-results.xml
 **/.keystone/
 **/.netlify/
 **/.next/
+/app/generated/prisma/
 **/.parcel-cache/
 **/.playwright/
 **/.puppeteer/
