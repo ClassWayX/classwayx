@@ -63,6 +63,7 @@ jobs:
           target: runner
           platforms: linux/amd64
           push: true
+          provenance: false
           tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/classwayx.lark-bot:${{ github.sha }}
 
       - name: 构建并推送迁移镜像
