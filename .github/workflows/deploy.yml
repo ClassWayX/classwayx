@@ -5,19 +5,131 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  ACR_REGISTRY: ${{ secrets.ACR_REGISTRY }}
+  ACR_NAMESPACE: ${{ secrets.ACR_NAMESPACE }}
+
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    outputs:
+      app_digest: ${{ steps.app.outputs.digest }}
+      migration_digest: ${{ steps.migration.outputs.digest }}
 
     steps:
-      - name: 登录服务器并运行服务
-        uses: appleboy/ssh-action@v1.2.5
+      - name: 检出本次提交
+        uses: actions/checkout@v6
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: 安装测试依赖
+        working-directory: lark-bot
+        run: npm ci
+
+      - name: 生成测试所需的 Prisma Client
+        working-directory: lark-bot
+        run: npx prisma generate
+
+      - name: 运行 Vitest
+        working-directory: lark-bot
+        run: npm test -- --run
+
+      - name: 登录 ACR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: 配置 Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: 构建并推送应用镜像
+        id: app
+        uses: docker/build-push-action@v7
+        with:
+          context: ./lark-bot
+          target: runner
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/classwayx.lark-bot:${{ github.sha }}
+
+      - name: 构建并推送迁移镜像
+        id: migration
+        uses: docker/build-push-action@v7
+        with:
+          context: ./lark-bot
+          target: migrator
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/classwayx.lark-bot-migration:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      DEPLOY_DIR: /home/${{ secrets.SERVER_USER }}/classwayx
+
+    steps:
+      - name: 检出部署配置
+        uses: actions/checkout@v6
+
+      - name: 生成本次发布的镜像地址
+        env:
+          APP_DIGEST: ${{ needs.build.outputs.app_digest }}
+          MIGRATION_DIGEST: ${{ needs.build.outputs.migration_digest }}
+        run: |
+          printf 'LARK_BOT_IMAGE=%s/%s/classwayx.lark-bot@%s\n' \
+            "$ACR_REGISTRY" "$ACR_NAMESPACE" "$APP_DIGEST" > release.env.next
+          printf 'LARK_BOT_MIGRATION_IMAGE=%s/%s/classwayx.lark-bot-migration@%s\n' \
+            "$ACR_REGISTRY" "$ACR_NAMESPACE" "$MIGRATION_DIGEST" >> release.env.next
+
+      - name: 上传部署配置
+        uses: appleboy/scp-action@v1
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_SECRET_KEY }}
+          source: docker-compose.yml,db_init.sql,release.env.next
+          target: ${{ env.DEPLOY_DIR }}
+          overwrite: true
+
+      - name: 拉取镜像并部署
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          ACR_USERNAME: ${{ secrets.ACR_USERNAME }}
+          ACR_PASSWORD: ${{ secrets.ACR_PASSWORD }}
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_SECRET_KEY }}
+          envs: ACR_REGISTRY,ACR_USERNAME,ACR_PASSWORD,DEPLOY_DIR
+          command_timeout: 20m
           script: |
-            cd /home/${{ secrets.SERVER_USER }}/classwayx
-            git pull origin main
-            docker compose up --build -d
-            docker image prune -f
+            set -eu
+            cd "$DEPLOY_DIR"
+
+            printf '%s' "$ACR_PASSWORD" | docker login "$ACR_REGISTRY" \
+              --username "$ACR_USERNAME" --password-stdin
+
+            compose() {
+              docker compose --env-file .env --env-file release.env.next \
+                -f docker-compose.yml "$@"
+            }
+
+            compose pull lark-bot lark-bot-db-migration
+            compose up -d --no-build
+            mv release.env.next release.env
