@@ -183,6 +183,8 @@ sudo vim /etc/hosts # 在 macOS & Linux 上运行
 
 [数据库初始化脚本](db_init.sql)（`db_init.sql`）。
 
-[应用](/app)（`/app`）。网页应用本体，使用 Next.js 构建。
+[应用](/app)（`/app`）。网页应用本体，使用 Next.js 构建。（注释状态）
 
 [飞书机器人消息推送](/lark-bot)（`/lark-bot`）。处理飞书自定义机器人消息推送的微服务。
+
+[用户验证](/auth)（`/auth`）。创建账户、登录账户等。
