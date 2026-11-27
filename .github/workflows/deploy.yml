@@ -23,6 +23,8 @@ jobs:
     outputs:
       app_digest: ${{ steps.app.outputs.digest }}
       migration_digest: ${{ steps.migration.outputs.digest }}
+      auth_digest: ${{ steps.auth.outputs.digest }}
+      auth_migration_digest: ${{ steps.auth_migration.outputs.digest }}
 
     steps:
       - name: 检出本次提交
@@ -77,6 +79,28 @@ jobs:
           provenance: false
           tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/classwayx.lark-bot-migration:${{ github.sha }}
 
+      - name: 构建并推送 auth 应用镜像
+        id: auth
+        uses: docker/build-push-action@v7
+        with:
+          context: ./auth
+          target: runner
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/classwayx.auth:${{ github.sha }}
+
+      - name: 构建并推送 auth 迁移镜像
+        id: auth_migration
+        uses: docker/build-push-action@v7
+        with:
+          context: ./auth
+          target: migrator
+          platforms: linux/amd64
+          push: true
+          provenance: false
+          tags: ${{ env.ACR_REGISTRY }}/${{ env.ACR_NAMESPACE }}/classwayx.auth-migration:${{ github.sha }}
+
   deploy:
     needs: build
     runs-on: ubuntu-22.04
@@ -92,11 +116,17 @@ jobs:
         env:
           APP_DIGEST: ${{ needs.build.outputs.app_digest }}
           MIGRATION_DIGEST: ${{ needs.build.outputs.migration_digest }}
+          AUTH_DIGEST: ${{ needs.build.outputs.auth_digest }}
+          AUTH_MIGRATION_DIGEST: ${{ needs.build.outputs.auth_migration_digest }}
         run: |
           printf 'LARK_BOT_IMAGE=%s/%s/classwayx.lark-bot@%s\n' \
             "$ACR_REGISTRY" "$ACR_NAMESPACE" "$APP_DIGEST" > release.env.next
           printf 'LARK_BOT_MIGRATION_IMAGE=%s/%s/classwayx.lark-bot-migration@%s\n' \
             "$ACR_REGISTRY" "$ACR_NAMESPACE" "$MIGRATION_DIGEST" >> release.env.next
+          printf 'AUTH_IMAGE=%s/%s/classwayx.auth@%s\n' \
+            "$ACR_REGISTRY" "$ACR_NAMESPACE" "$AUTH_DIGEST" >> release.env.next
+          printf 'AUTH_MIGRATION_IMAGE=%s/%s/classwayx.auth-migration@%s\n' \
+            "$ACR_REGISTRY" "$ACR_NAMESPACE" "$AUTH_MIGRATION_DIGEST" >> release.env.next
 
       - name: 上传部署配置
         uses: appleboy/scp-action@v1
@@ -131,6 +161,6 @@ jobs:
                 -f docker-compose.yml "$@"
             }
 
-            compose pull lark-bot lark-bot-db-migration
+            compose pull lark-bot lark-bot-db-migration auth auth-db-migration
             compose up -d --no-build
             mv release.env.next release.env

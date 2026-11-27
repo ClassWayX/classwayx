@@ -37,6 +37,25 @@ services:
       - /app/.next
       - /app/app/generated/prisma
 
+  auth-db-migration:
+    image: classwayx-auth-migration-dev
+    volumes:
+      - ./auth/prisma:/app/prisma
+      - ./auth/prisma7.config.ts:/app/prisma7.config.ts
+
+  auth:
+    build:
+      target: dev
+    image: classwayx-auth-dev
+    ports: !override
+      - "3002:3000"
+    restart: "no"
+    volumes:
+      - ./auth:/app
+      - /app/node_modules
+      - /app/.next
+      - /app/app/generated/prisma
+
   postgres:
     ports:
       - "127.0.0.1:5432:5432"

@@ -21,6 +21,9 @@ services:
       LARK_BOT_USER: ${LARK_BOT_USER}
       LARK_BOT_USER_PASSWORD: ${LARK_BOT_USER_PASSWORD}
       LARK_BOT_DB_NAME: ${LARK_BOT_DB_NAME}
+      AUTH_USER: ${AUTH_USER:?}
+      AUTH_USER_PASSWORD: ${AUTH_USER_PASSWORD:?}
+      AUTH_DB_NAME: ${AUTH_DB_NAME:?}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_DB: ${DB_NAME}
       PGPASSWORD: ${DB_PASSWORD}
@@ -29,17 +32,18 @@ services:
         condition: service_healthy
     volumes:
       - ./db_init.sql:/app/db_init.sql
-    command: >
-      sh -c "
-      psql
-      --set ON_ERROR_STOP=1
-      --set lark_bot_db=$$LARK_BOT_DB_NAME
-      --set lark_bot_user=$$LARK_BOT_USER
-      --set lark_bot_user_password=$$LARK_BOT_USER_PASSWORD
-      -h postgres
-      -U $$POSTGRES_USER
-      -d $$POSTGRES_DB
-      -f /app/db_init.sql"
+    command:
+      - sh
+      - -ec
+      - >-
+        exec psql --set ON_ERROR_STOP=1
+        --set lark_bot_db="$$LARK_BOT_DB_NAME"
+        --set lark_bot_user="$$LARK_BOT_USER"
+        --set lark_bot_user_password="$$LARK_BOT_USER_PASSWORD"
+        --set auth_db="$$AUTH_DB_NAME"
+        --set auth_user="$$AUTH_USER"
+        --set auth_user_password="$$AUTH_USER_PASSWORD"
+        -h postgres -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -f /app/db_init.sql
 
   lark-bot-db-migration:
     build:
@@ -65,9 +69,42 @@ services:
       - "6701:3000"
     env_file:
       - ./lark-bot/.env
+    environment:
+      DATABASE_URL: ""
     restart: always
     depends_on:
       lark-bot-db-migration:
+        condition: service_completed_successfully
+
+  auth-db-migration:
+    build:
+      context: ./auth
+      target: migrator
+    image: ${AUTH_MIGRATION_IMAGE:-classwayx-auth-migration}
+    env_file:
+      - ./auth/.env
+    environment:
+      BETTER_AUTH_SECRET: ""
+      AUTH_USER_DATABASE_URL: ""
+    restart: "no"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+
+  auth:
+    build:
+      context: ./auth
+      target: runner
+    image: ${AUTH_IMAGE:-classwayx-auth-prod}
+    ports:
+      - "6702:3000"
+    env_file:
+      - ./auth/.env
+    environment:
+      DATABASE_URL: ""
+    restart: always
+    depends_on:
+      auth-db-migration:
         condition: service_completed_successfully
 
   postgres:
