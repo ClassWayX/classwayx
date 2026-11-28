@@ -11,6 +11,7 @@ datasource db {
 model User {
   id            String    @id
   name          String
+  username      String?
   email         String
   emailVerified Boolean   @default(false)
   image         String?
@@ -20,6 +21,7 @@ model User {
   accounts      Account[]
 
   @@unique([email])
+  @@unique([username])
   @@map("user")
 }
 
